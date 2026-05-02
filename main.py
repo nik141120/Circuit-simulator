@@ -66,6 +66,16 @@ globalState = state()
 buttons = [UI.wireButton, UI.voltage_sourceButton, UI.resistorButton, UI.capacitorButton, UI.inductorButton, UI.startStopButton]
 buttonPressedBefore = 0  # State to check if a button was pressed before
 
+# Map each component-placement button to the component name it places.
+# Used to replace a long chain of near-identical if/elif blocks below.
+componentButtonMap = {
+    UI.wireButton:           "wire",
+    UI.voltage_sourceButton: "voltage_source",
+    UI.resistorButton:       "resistor",
+    UI.capacitorButton:      "capacitor",
+    UI.inductorButton:       "inductor",
+}
+
 ################################################################################################
 
 
@@ -88,44 +98,16 @@ while running:
                         # Handle button clicks
                         if b == UI.startStopButton:
                             globalState.liveSimulation = not globalState.liveSimulation
-                        elif b == UI.wireButton:
-                            if globalState.component == "wire":
+                        elif b in componentButtonMap:
+                            componentName = componentButtonMap[b]
+                            if globalState.component == componentName:
+                                # Clicking the already-selected button deselects it
                                 placementState = 0
                                 globalState.component = None
                             else:
+                                # Otherwise select this component for placement
                                 placementState = 1
-                                globalState.component = "wire"
-                        elif b == UI.voltage_sourceButton:
-                            if globalState.component == "voltage_source":
-                                placementState = 0
-                                globalState.component = None
-                            else:
-                                placementState = 1
-                                globalState.component = "voltage_source"
-
-                        elif b == UI.resistorButton:
-                            if globalState.component == "resistor":
-                                placementState = 0
-                                globalState.component = None
-                            else:
-                                placementState = 1
-                                globalState.component = "resistor"
-
-                        elif b == UI.capacitorButton:
-                            if globalState.component == "capacitor":
-                                placementState = 0
-                                globalState.component = None
-                            else:
-                                placementState = 1
-                                globalState.component = "capacitor"
-
-                        elif b == UI.inductorButton:
-                            if globalState.component == "inductor":
-                                placementState = 0
-                                globalState.component = None
-                            else:
-                                placementState = 1
-                                globalState.component = "inductor"
+                                globalState.component = componentName
 
 
     
@@ -142,17 +124,17 @@ while running:
                     elif globalState.placingComponents == 1:
                         globalState.placingComponents = 0
 
-                        # Place the component at the stored position
-                        if globalState.component == "wire":
-                            PlaceComponent.place_component("wire", globalState.storeMouseX, globalState.storeMouseY, round(screenToGridX(mouse_x)), round(screenToGridY(mouse_y)))
-                        elif globalState.component == "voltage_source":
-                            PlaceComponent.place_component("voltage_source", globalState.storeMouseX, globalState.storeMouseY, round(screenToGridX(mouse_x)), round(screenToGridY(mouse_y)))   
-                        elif globalState.component == "resistor":
-                            PlaceComponent.place_component("resistor", globalState.storeMouseX, globalState.storeMouseY, round(screenToGridX(mouse_x)), round(screenToGridY(mouse_y)))
-                        elif globalState.component == "capacitor":
-                            PlaceComponent.place_component("capacitor", globalState.storeMouseX, globalState.storeMouseY, round(screenToGridX(mouse_x)), round(screenToGridY(mouse_y)))
-                        elif globalState.component == "inductor":
-                            PlaceComponent.place_component("inductor", globalState.storeMouseX, globalState.storeMouseY, round(screenToGridX(mouse_x)), round(screenToGridY(mouse_y)))
+                        # Place the component at the stored position.
+                        # All component types share the same placement call,
+                        # so a single dispatch handles every case.
+                        if globalState.component in componentButtonMap.values():
+                            PlaceComponent.place_component(
+                                globalState.component,
+                                globalState.storeMouseX,
+                                globalState.storeMouseY,
+                                round(screenToGridX(mouse_x)),
+                                round(screenToGridY(mouse_y)),
+                            )
 
 
             if event.button == 4:
